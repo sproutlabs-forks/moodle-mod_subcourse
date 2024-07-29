@@ -91,7 +91,7 @@ echo $OUTPUT->heading(format_string($subcourse->name));
 echo $OUTPUT->box(format_module_intro('subcourse', $subcourse, $cm->id));
 
 if ($refcourse) {
-    $percentage = \core_completion\progress::get_course_progress_percentage($refcourse);
+    $percentage = get_course_progress_percentage($refcourse);
 
     echo html_writer::start_div('container-fluid');
     echo html_writer::start_div('row-fluid');

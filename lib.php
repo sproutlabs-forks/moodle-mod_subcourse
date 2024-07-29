@@ -266,7 +266,7 @@ function mod_subcourse_cm_info_view(cm_info $cm) {
     $refcourse = $DB->get_record_sql($sql, ['subcourseid' => $cm->instance], IGNORE_MISSING);
 
     if ($refcourse) {
-        $percentage = \core_completion\progress::get_course_progress_percentage($refcourse);
+        $percentage = get_course_progress_percentage($refcourse);
         if ($percentage !== null) {
             $percentage = floor($percentage);
             $html .= html_writer::tag('div', get_string('currentprogress', 'subcourse', $percentage),
@@ -289,6 +289,46 @@ function mod_subcourse_cm_info_view(cm_info $cm) {
         $cm->set_after_link($html);
     }
 }
+function get_course_progress_percentage($course, $userid = 0) {
+        global $USER;
+
+        // Make sure we continue with a valid userid.
+        if (empty($userid)) {
+            $userid = $USER->id;
+        }
+
+        $completion = new \completion_info($course);
+
+        // First, let's make sure completion is enabled.
+        if (!$completion->is_enabled()) {
+            return null;
+        }
+
+        if (!$completion->is_tracked_user($userid)) {
+            return null;
+        }
+
+        // Before we check how many modules have been completed see if the course has.
+        if ($completion->is_course_complete($userid)) {
+            return 100;
+        }
+
+        // Get the number of modules that support completion.
+        $modules = $completion->get_activities();
+        $count = count($modules);
+        if (!$count) {
+            return null;
+        }
+
+        // Get the number of modules that have been completed.
+        $completed = 0;
+        foreach ($modules as $module) {
+            $data = $completion->get_data($module, true, $userid);
+            $completed += $data->completionstate == COMPLETION_INCOMPLETE ? 0 : 1;
+        }
+
+        return ($completed / $count) * 100;
+    }
 
 /**
  * Obtains the automatic completion state for this subcourse.
